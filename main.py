@@ -23,6 +23,7 @@ def load_pdf(file_path: str) -> str:
 # preload PDF into memory
 pdf_text = load_pdf("mangroves.pdf")
 
+# further improvements: maybe use not just one pdf source but 5 then set them up in a rag-based system.
 documents = [
     {
         "id": "mangrove-doc",
@@ -49,28 +50,28 @@ conversation = [
     }
 ]
 
-# Request body model
+# data validation
 class ChatRequest(BaseModel):
     message: str
 
  # chat endpoint
 @app.post("/chat")
 def chat(request: ChatRequest):
-    global conversation
+    global messages
 
     # Limit convo to 10 user exchanges
-    user_count = sum(1 for m in conversation if m["role"] == "user")
+    user_count = sum(1 for m in messages if m["role"] == "user")
     if user_count >= 10:
         return {"error": "Conversation limit reached (10 exchanges). Please start a new chat."}
 
     # Append user message
-    conversation.append({"role": "user", "content": request.message})
+    messages.append({"role": "user", "content": request.message})
 
     # generate
     bot_reply = ""
     response = co.chat_stream(
         model="command-r-plus-08-2024",
-        messages=conversation,
+        messages=messages,
         documents=documents
     )
 
@@ -79,7 +80,7 @@ def chat(request: ChatRequest):
             bot_reply += event.delta.message.content.text
 
     # Save bot response to convo history
-    conversation.append({"role": "assistant", "content": bot_reply})
+    messages.append({"role": "assistant", "content": bot_reply})
 
     return {"response": bot_reply}
 
@@ -87,6 +88,6 @@ def chat(request: ChatRequest):
 @app.post("/reset")
 def reset_conversation():
     """Reset conversation history."""
-    global conversation
-    conversation = [{"role": "system", "content": system_message}]
+    global messages
+    messages = [{"role": "system", "content": system_message}]
     return {"status": "Conversation reset"}
