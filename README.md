@@ -20,7 +20,9 @@ Run uvicorn for FastAPI.
 ```
 uvicorn main:app --reload
 ```
-
+```
+open the \docs endpoint in your browser
+```
 ## Repository Contents  
 
 ---
